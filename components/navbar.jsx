@@ -14,6 +14,8 @@ import {
   NavigationMenuViewport,
   navigationMenuTriggerStyle,
 } from "@/components/ui/navigation-menu";
+import { Button } from "./ui/button";
+import { Search } from "lucide-react";
 
 function Navbar() {
   return (
@@ -22,38 +24,46 @@ function Navbar() {
       <div className="flex justify-around">
         <div className="flex justify-center items-center mr-3">
           <Link href="/">
-            <Image
-              src={Logo}
-              width={70}
-              height={70}
-              alt="Habitat Finder Logo"
-            />
+            <Image src={Logo} width={70} height={70} alt="Habitat Finder Logo" />
           </Link>
         </div>
-        <div className="flex justify-center items-center">
-          <Input type="search" placeholder="search for a place" />
+        <div className="flex justify-center items-center relative">
+          {" "}
+          {/* Added relative positioning */}
+          <Input type="search" placeholder="search for a place" className="border-2 focus:ring-0" />
+          <Search className="absolute right-2 top-[2]" size={18} />
+          {/* Adjusted position */}
         </div>
       </div>
       <div className="flex">
-        <ul className="flex ">
+        <ul className="flex justify-center items-center">
           <Link href="favorites" className="m-2">
             Support
           </Link>
+          <Link href="/signup" className="m-2">
+            Sign up
+          </Link>
           <Link href="/login" className="m-2">
-            Login
+            <Button variant="default" size="sm">
+              Login
+            </Button>
           </Link>
 
           <NavigationMenu>
-            <NavigationMenuList className="flex gap-2">
+            <NavigationMenuList>
               <NavigationMenuItem>
-                <NavigationMenuTrigger className={navigationMenuTriggerStyle()}>
-                  Menu
-                </NavigationMenuTrigger>
+                <NavigationMenuTrigger className={navigationMenuTriggerStyle()}>Menu</NavigationMenuTrigger>
                 <NavigationMenuContent className="w-56">
-                  <ul className="p-4">
-                    <li>Item 1</li>
-                    <li>Item 2</li>
-                    <li>Item 3</li>
+                  <ul className="p-2 w-full">
+                    <Link href={"/about"}>
+                      <li className="text-primary underline-offset-4 hover:underline">About</li>
+                    </Link>
+                    <Link href={"/FAQs"}>
+                      <li className="text-primary underline-offset-4 hover:underline">FAQs</li>
+                    </Link>
+                    <Link href={"/terms-and-conditions"}>
+                      <li className="text-primary underline-offset-4 hover:underline">T&C</li>
+                    </Link>
                   </ul>
                 </NavigationMenuContent>
               </NavigationMenuItem>
