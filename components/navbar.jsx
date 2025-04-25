@@ -2,7 +2,7 @@ import Link from "next/link";
 import React from "react";
 import { Input } from "./ui/input";
 import Image from "next/image";
-import Logo from "../assets/LogoLogoHabitat.jpg";
+import Logo from "@/public/assets/LogoLogoHabitat.jpg";
 import {
   NavigationMenu,
   NavigationMenuList,

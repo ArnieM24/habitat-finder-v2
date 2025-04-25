@@ -1,9 +1,12 @@
 import Image from "next/image";
 import Navbar from "../components/navbar";
-import LandingPageImg from "../assets/first-landing-page.png";
+import LandingPageImg from "@/public/assets/first-landing-page.png";
 import SearchInput from "./components/search-input";
 
 import HomepageCard from "./components/homepage-card";
+import Footer from "@/components/footer";
+import AccordionLandingPage from "./components/accordion";
+import TandC from "./components/tandc";
 
 export default function Home() {
   return (
@@ -20,7 +23,7 @@ export default function Home() {
           </div>
           <SearchInput />
 
-          <div className="mt-15 flex-col">
+          <div className="mt-15 flex-col text-center">
             <h1 className="text-4xl">Explore our neighborhoods</h1>
             <p className="text-center">from this locations:</p>
             <div>
@@ -28,8 +31,18 @@ export default function Home() {
             </div>
           </div>
         </div>
+        <div className="w-full max-w-[980px] mx-auto px-4">
+          <h1 className="text-3xl font-bold">FAQs</h1>
+          <AccordionLandingPage />
+        </div>
+        <div className="w-full max-w-[950px] mx-auto">
+          <h1 className="text-2xl font-bold mb-4 text-gray-800">Terms and Conditions (T&C)</h1>
+          <TandC />
+        </div>
       </main>
-      <footer></footer>
+      <footer>
+        <Footer />
+      </footer>
     </div>
   );
 }
