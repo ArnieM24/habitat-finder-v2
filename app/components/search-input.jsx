@@ -35,7 +35,7 @@ function SearchInput() {
           </Menubar>
         </div>
         <div>
-          <Button>Search</Button>
+          <Button className="cursor-pointer">Search</Button>
         </div>
       </div>
     </div>

@@ -7,6 +7,8 @@ import HomepageCard from "./components/homepage-card";
 import Footer from "@/components/footer";
 import AccordionLandingPage from "./components/accordion";
 import TandC from "./components/tandc";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
 
 export default function Home() {
   return (
@@ -38,6 +40,15 @@ export default function Home() {
         <div className="w-full max-w-[950px] mx-auto">
           <h1 className="text-2xl font-bold mb-4 text-gray-800">Terms and Conditions (T&C)</h1>
           <TandC />
+        </div>
+        <div className="mt-10 w-full mx-auto px-4 bg-gray-100 text-center p-4 h-[200px]  pt-10">
+          <h1 className="text-2xl">Already Searching? Log In to Save Your Favorites!</h1>
+          <p className="text-[13px]">Don’t lose that perfect home—log in to keep track of listings you love.</p>
+          <Link href="/login">
+            <Button variant="default" size="sm" className="mt-10 cursor-pointer">
+              Get Started
+            </Button>
+          </Link>
         </div>
       </main>
       <footer>

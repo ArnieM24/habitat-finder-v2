@@ -44,7 +44,7 @@ function Navbar() {
             Sign up
           </Link>
           <Link href="/login" className="m-2">
-            <Button variant="default" size="sm">
+            <Button variant="default" size="sm" className="cursor-pointer">
               Login
             </Button>
           </Link>
