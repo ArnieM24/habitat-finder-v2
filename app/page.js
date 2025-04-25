@@ -1,7 +1,9 @@
 import Image from "next/image";
 import Navbar from "../components/navbar";
 import LandingPageImg from "../assets/first-landing-page.png";
-import SearchInput from "@/components/search-input";
+import SearchInput from "./components/search-input";
+
+import HomepageCard from "./components/homepage-card";
 
 export default function Home() {
   return (
@@ -17,6 +19,14 @@ export default function Home() {
             <Image src={LandingPageImg} alt="landing page img" className="object-cover" fill />
           </div>
           <SearchInput />
+
+          <div className="mt-15 flex-col">
+            <h1 className="text-4xl">Explore our neighborhoods</h1>
+            <p className="text-center">from this locations:</p>
+            <div>
+              <HomepageCard />
+            </div>
+          </div>
         </div>
       </main>
       <footer></footer>

@@ -1,6 +1,6 @@
 import React from "react";
 import { Menubar, MenubarContent, MenubarItem, MenubarMenu, MenubarSeparator, MenubarShortcut, MenubarTrigger } from "@/components/ui/menubar";
-import { Button } from "./ui/button";
+import { Button } from "../../components/ui/button";
 
 function SearchInput() {
   return (
