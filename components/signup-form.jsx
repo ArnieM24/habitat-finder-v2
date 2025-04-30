@@ -9,15 +9,6 @@ import Link from "next/link";
 import { login, signup } from "@/app/auth/login/action";
 
 export function SignUpForm({ className, ...props }) {
-  const handleSignup = async (formData) => {
-    const { error } = await signup(formData);
-    if (error) {
-      console.error(error);
-    } else {
-      redirect("/error");
-    }
-  };
-
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
       <Card>
@@ -57,7 +48,7 @@ export function SignUpForm({ className, ...props }) {
                   <Input id="password" type="password" required />
                 </div>
 
-                <Button className="w-full" formAction={handleSignup}>
+                <Button className="w-full" type="submit">
                   Sign up
                 </Button>
               </div>

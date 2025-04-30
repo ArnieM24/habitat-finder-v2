@@ -2,6 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { createServerClient } from "@supabase/ssr";
+import { cookies } from "next/headers";
 
 import { createClient } from "@/utils/supabase/server";
 
@@ -17,7 +19,6 @@ export async function login(formData) {
 
   if (error) {
     console.error(error);
-    redirect("/error");
   }
 
   revalidatePath("/", "layout");
@@ -40,7 +41,7 @@ export async function signup(formData) {
   }
 
   revalidatePath("/", "layout");
-  redirect("/auth/login");
+  redirect("/homepage");
 }
 
 export async function signOut() {
@@ -56,3 +57,28 @@ export async function signOut() {
   revalidatePath("/", "layout");
   redirect("/auth/login");
 }
+
+const signInWith = (provider) => async () => {
+  const supabase = await createClient();
+
+  const auth_callback_url = `${process.env.SITE_URL}/auth/callback?next=/homepage`;
+
+  const { data, error } = await supabase.auth.signInWithOAuth({
+    provider,
+    options: {
+      redirectTo: auth_callback_url,
+    },
+  });
+
+  console.log(data);
+
+  if (error) {
+    console.log(error);
+  }
+
+  redirect(data.url);
+};
+
+const signInWithGoogle = signInWith("google");
+
+export { signInWithGoogle };
