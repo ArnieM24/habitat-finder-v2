@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Link from "next/link";
-import { login } from "@/app/auth/login/action";
+import { login } from "@/app/(auth)/login/action";
 
 export function LoginForm({ className, ...props }) {
   return (

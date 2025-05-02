@@ -4,7 +4,7 @@ import Link from "next/link";
 import React, { useEffect } from "react";
 import { Input } from "./ui/input";
 import Image from "next/image";
-import Logo from "@/public/assets/LogoLogoHabitat.jpg";
+import Logo from "@/public/assets/LogoHabitat.png";
 import {
   NavigationMenu,
   NavigationMenuList,
@@ -22,7 +22,9 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { Button } from "./ui/button";
 import { Search } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
-import { signOut } from "@/app/auth/login/action";
+import { signOut } from "@/app/(auth)/login/action";
+import { useRouter } from "next/router";
+import { usePathname } from "next/navigation";
 
 function Navbar() {
   const [user, setUser] = React.useState(null); // State to manage user authentication
@@ -36,8 +38,10 @@ function Navbar() {
     getUser();
   }, []);
 
+  const pathname = usePathname();
+
   return (
-    <div className="parent-container flex items-center justify-around mx-auto w-full px-4 py-2 border border-b-2">
+    <div className="parent-container flex items-center justify-around mx-auto w-full px-4 py-2 border border-b-2 bg-white shadow-md">
       {/* Parent container */}
       <div className="flex justify-around">
         <div className="flex justify-center items-center mr-3">
@@ -47,8 +51,14 @@ function Navbar() {
         </div>
         <div className="flex justify-center items-center relative">
           {/* Added relative positioning */}
-          <Input type="search" placeholder="search for a place" className="border-2 focus:ring-0" />
-          <Search className="absolute right-2 top-[2]" size={18} />
+          {pathname === "/profile" ? (
+            ""
+          ) : (
+            <>
+              <Input type="search" placeholder="search for a place" className="border-2 focus:ring-0" /> <Search className="absolute right-2 top-[2]" size={18} />
+            </>
+          )}
+
           {/* Adjusted position */}
         </div>
       </div>
@@ -56,9 +66,14 @@ function Navbar() {
         <ul className="flex justify-center items-center">
           {user ? (
             <>
-              <Link href="/profile" className="m-2">
-                Profile
-              </Link>
+              {pathname === "/profile" ? (
+                ""
+              ) : (
+                <Link href="/profile" className="m-2">
+                  Profile
+                </Link>
+              )}
+
               <form className="mr-2">
                 <Button formAction={signOut} variant="default" size="sm" className="cursor-pointer">
                   Logout
@@ -83,7 +98,7 @@ function Navbar() {
               <Link href="favorites" className="m-2">
                 Support
               </Link>
-              <Link href="/auth/login" className="m-2">
+              <Link href="/login" className="m-2">
                 <Button variant="default" size="sm" className="cursor-pointer">
                   Login
                 </Button>

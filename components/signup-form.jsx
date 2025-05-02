@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Link from "next/link";
-import { login, signup } from "@/app/auth/login/action";
+import { login, signup } from "@/app/(auth)/login/action";
 
 export function SignUpForm({ className, ...props }) {
   return (

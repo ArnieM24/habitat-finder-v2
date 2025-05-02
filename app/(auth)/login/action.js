@@ -2,8 +2,6 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { createServerClient } from "@supabase/ssr";
-import { cookies } from "next/headers";
 
 import { createClient } from "@/utils/supabase/server";
 
@@ -55,13 +53,13 @@ export async function signOut() {
   }
 
   revalidatePath("/", "layout");
-  redirect("/auth/login");
+  redirect("/login");
 }
 
 const signInWith = (provider) => async () => {
   const supabase = await createClient();
 
-  const auth_callback_url = `${process.env.SITE_URL}/auth/callback?next=/homepage`;
+  const auth_callback_url = `${process.env.SITE_URL}/callback?next=/homepage`;
 
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider,
