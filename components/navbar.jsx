@@ -45,9 +45,15 @@ function Navbar() {
       {/* Parent container */}
       <div className="flex justify-around">
         <div className="flex justify-center items-center mr-3">
-          <Link href="/">
-            <Image src={Logo} width={70} height={70} alt="Habitat Finder Logo" />
-          </Link>
+          {user ? (
+            <Link href="/homepage" className="cursor-pointer">
+              <Image src={Logo} width={70} height={70} alt="Habitat Finder Logo" />
+            </Link>
+          ) : (
+            <Link href="/" className="cursor-pointer">
+              <Image src={Logo} width={70} height={70} alt="Habitat Finder Logo" />
+            </Link>
+          )}
         </div>
         <div className="flex justify-center items-center relative">
           {/* Added relative positioning */}

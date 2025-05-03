@@ -31,13 +31,35 @@ export async function signup(formData) {
     password: formData.get("password"),
   };
 
-  const { error } = await supabase.auth.signUp(data);
+  // Step 1: Sign up
+  const { data: signupData, error: signupError } = await supabase.auth.signUp({
+    email: formData.get("email"),
+    password: formData.get("password"),
+  });
 
-  if (error) {
-    console.error(error);
+  if (signupError) {
+    console.error(signupError);
     redirect("/error");
   }
 
+  const user = signupData.user;
+
+  // Step 2: Insert user into user_info table
+  if (user) {
+    const { error: insertError } = await supabase.from("users_info").insert([
+      {
+        UUID: user.id, // same as auth.users.id
+        email: user.email,
+      },
+    ]);
+
+    if (insertError) {
+      console.error(insertError);
+      redirect("/error");
+    }
+  }
+
+  // Step 3: Redirect
   revalidatePath("/", "layout");
   redirect("/homepage");
 }

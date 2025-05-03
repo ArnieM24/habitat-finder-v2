@@ -1,3 +1,5 @@
+"use client";
+
 import Image from "next/image";
 import Navbar from "../components/navbar";
 import LandingPageImg from "@/public/assets/first-landing-page.png";

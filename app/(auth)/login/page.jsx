@@ -1,8 +1,11 @@
+"use client";
+
 import Navbar from "@/components/navbar";
-import { login, signInWithGoogle } from "./action";
+import { listenForAuthStateChanges, login, signInWithGoogle } from "./action";
 import Link from "next/link";
 import Logo from "@/public/assets/LogoLogoHabitat.jpg";
 import Image from "next/image";
+import { useEffect } from "react";
 
 export default function LoginPage() {
   return (
@@ -73,7 +76,7 @@ export default function LoginPage() {
 
             <p className="text-sm text-center text-neutral-500">
               Don’t have an account?
-              <Link href="/auth/sign-up" className="text-blue-400 hover:underline ml-1">
+              <Link href="/sign-up" className="text-blue-400 hover:underline ml-1">
                 Sign up
               </Link>
             </p>

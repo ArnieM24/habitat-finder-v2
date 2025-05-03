@@ -1,11 +1,12 @@
 import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
+import { NextResponse } from "next/server";
 
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
   const token_hash = searchParams.get("token_hash");
   const type = searchParams.get("type");
-  const next = searchParams.get("next") ?? "/";
+  const next = searchParams.get("next") ?? "/homepage";
 
   if (token_hash && type) {
     const supabase = await createClient();
@@ -16,10 +17,10 @@ export async function GET(request) {
     });
     if (!error) {
       // redirect user to specified redirect URL or root of app
-      redirect(next);
+      return NextResponse.redirect(new URL(next, request.url));
     }
   }
 
   // redirect the user to an error page with some instructions
-  redirect("/error");
+  return NextResponse.redirect(new URL("/error", request.url));
 }
