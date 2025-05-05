@@ -21,50 +21,95 @@ import {
 
 const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
 
-supabase.auth.onAuthStateChange(async (event, session) => {
-  if (event === "SIGNED_IN" && session?.user) {
-    const { id, email } = session.user;
-
-    // Check if profile already exists
-    const { data: existingProfile } = await supabase.from("user_info").select("*").eq("id", id).single();
-
-    if (!existingProfile) {
-      // Create a new profile with default/null values
-      await supabase.from("user_info").insert({
-        id, // User ID from auth.users
-        email, // Email from auth.users
-        first_name: null,
-        last_name: null,
-        phone_num: null,
-        country: null,
-        city: null,
-        street: null,
-        postal_code: null,
-      });
-    }
-  }
-});
-
 function ProfilePage() {
   const [activetab, setActiveTab] = React.useState("profile");
   const [profileData, setProfileData] = React.useState(null);
+  const [errorMsg, setErrorMsg] = React.useState("");
   const handleTabClick = (tab) => {
     setActiveTab(tab);
   };
 
+  const fetchProfile = async () => {
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    if (!session?.user) {
+      setErrorMsg("No logged-in user.");
+      setProfileData(null);
+      return;
+    }
+
+    // No need to filter by id, RLS will do it!
+    const { data, error } = await supabase.from("users_info").select("*").single();
+
+    if (error) {
+      setErrorMsg(error.message);
+      setProfileData(null);
+    } else {
+      setProfileData(data);
+    }
+  };
+
   useEffect(() => {
-    const fetchProfile = async () => {
-      const { data, error: profileError } = await supabase.from("users_info").select("*");
-
-      if (profileError) {
-        console.error("Profile fetch error:", profileError);
-      } else {
-        setProfileData(data);
-      }
-    };
-
     fetchProfile();
   }, []);
+
+  // const ensureUserProfile = async (session) => {
+  //   if (!session?.user) return;
+  //   const { id, email } = session.user;
+  //   const { data: existingProfile, error: selectError } = await supabase.from("users_info").select("*").eq("id", session.user.id).maybeSingle();
+
+  //   if (selectError) {
+  //     console.error(selectError); // Log the error for debugging
+  //     return;
+  //   }
+
+  //   // if (!existingProfile) {
+  //   //   // Insert new profile row if it doesn't exist
+  //   //   await supabase.from("users_info").insert({
+  //   //     email: session.user.email,
+  //   //     id: session.user.id,
+  //   //     first_name: null,
+  //   //     last_name: null,
+  //   //     phone_num: null,
+  //   //     role: null,
+  //   //     country: null,
+  //   //     city: null,
+  //   //     postal_code: null,
+  //   //     street: null,
+  //   //   });
+  //   // }
+  // };
+
+  // useEffect(() => {
+  //   let authListener = null;
+
+  //   // Function to handle user authentication and fetching profiles
+  //   const handleAuthChange = async () => {
+  //     const {
+  //       data: { session },
+  //     } = await supabase.auth.getSession();
+  //     await ensureUserProfile(session);
+  //     await fetchProfile();
+  //   };
+
+  //   // Initial session check
+  //   handleAuthChange();
+
+  //   // Listen for auth state changes
+  //   authListener = supabase.auth.onAuthStateChange(async (_event, session) => {
+  //     await ensureUserProfile(session);
+  //     await fetchProfile(session);
+  //   });
+
+  //   return () => {
+  //     if (authListener?.data?.subscription) {
+  //       authListener.data.subscription.unsubscribe();
+  //     }
+  //   };
+  // }, []);
+
   console.log("Fetching profile data...", profileData);
 
   const navItems = ["profile", "settings", "notifications", "Listed Properties"];
@@ -149,8 +194,8 @@ export function ProfileContent({ profileData }) {
 
   return (
     <>
-      {profileData?.map((item) => (
-        <div key={item} className="flex flex-col h-full ml-10 w-full">
+      {profileData && (
+        <div className="flex flex-col h-full ml-10 w-full">
           <h1 className="text-xl font-semibold mt-4">My Profile</h1>
           <div className="flex mt-4 w-full h-50 border border-gray-200 rounded-lg p-4 shadow-md bg-white">
             <div className="flex items-center justify-center">
@@ -259,7 +304,7 @@ export function ProfileContent({ profileData }) {
             </div>
           </div>
         </div>
-      ))}
+      )}
     </>
   );
 }
