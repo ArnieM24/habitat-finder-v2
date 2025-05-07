@@ -25,92 +25,48 @@ function ProfilePage() {
   const [activetab, setActiveTab] = React.useState("profile");
   const [profileData, setProfileData] = React.useState(null);
   const [errorMsg, setErrorMsg] = React.useState("");
+  const [session, setSession] = React.useState(null); // State to hold the session data
   const handleTabClick = (tab) => {
     setActiveTab(tab);
   };
 
   const fetchProfile = async () => {
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
-
-    if (!session?.user) {
+    if (!session) {
       setErrorMsg("No logged-in user.");
-      setProfileData(null);
+
       return;
     }
 
-    // No need to filter by id, RLS will do it!
-    const { data, error } = await supabase.from("users_info").select("*").single();
+    const { data, error } = await supabase.from("users_info").select("*").eq("id", session.user.id).single();
 
     if (error) {
       setErrorMsg(error.message);
-      setProfileData(null);
+      console.error("Error fetching user profile:", error);
     } else {
       setProfileData(data);
     }
   };
 
   useEffect(() => {
-    fetchProfile();
-  }, []);
+    const { data: authListener } = supabase.auth.onAuthStateChange((_event, newSession) => {
+      setSession(newSession); // Save session to state
+      if (newSession) {
+        fetchProfile(); // Fetch profile data when session is updated
+      }
+    });
 
-  // const ensureUserProfile = async (session) => {
-  //   if (!session?.user) return;
-  //   const { id, email } = session.user;
-  //   const { data: existingProfile, error: selectError } = await supabase.from("users_info").select("*").eq("id", session.user.id).maybeSingle();
+    // If there's already a session when the component mounts, fetch the profile
+    if (session) {
+      fetchProfile();
+    }
 
-  //   if (selectError) {
-  //     console.error(selectError); // Log the error for debugging
-  //     return;
-  //   }
+    return () => {
+      authListener.subscription.unsubscribe(); // Clean up listener on unmount
+    };
+  }, [session]);
 
-  //   // if (!existingProfile) {
-  //   //   // Insert new profile row if it doesn't exist
-  //   //   await supabase.from("users_info").insert({
-  //   //     email: session.user.email,
-  //   //     id: session.user.id,
-  //   //     first_name: null,
-  //   //     last_name: null,
-  //   //     phone_num: null,
-  //   //     role: null,
-  //   //     country: null,
-  //   //     city: null,
-  //   //     postal_code: null,
-  //   //     street: null,
-  //   //   });
-  //   // }
-  // };
-
-  // useEffect(() => {
-  //   let authListener = null;
-
-  //   // Function to handle user authentication and fetching profiles
-  //   const handleAuthChange = async () => {
-  //     const {
-  //       data: { session },
-  //     } = await supabase.auth.getSession();
-  //     await ensureUserProfile(session);
-  //     await fetchProfile();
-  //   };
-
-  //   // Initial session check
-  //   handleAuthChange();
-
-  //   // Listen for auth state changes
-  //   authListener = supabase.auth.onAuthStateChange(async (_event, session) => {
-  //     await ensureUserProfile(session);
-  //     await fetchProfile(session);
-  //   });
-
-  //   return () => {
-  //     if (authListener?.data?.subscription) {
-  //       authListener.data.subscription.unsubscribe();
-  //     }
-  //   };
-  // }, []);
-
-  console.log("Fetching profile data...", profileData);
+  console.log("Profile Data:", profileData);
+  console.log("Sessionsssss:", session);
 
   const navItems = ["profile", "settings", "notifications", "Listed Properties"];
   const contents = () => {
@@ -118,7 +74,7 @@ function ProfilePage() {
       case "profile":
         return (
           <div>
-            <ProfileContent profileData={profileData} />
+            <ProfileContent profileData={profileData} session={session} />
           </div>
         );
       case "settings":
@@ -159,7 +115,7 @@ function ProfilePage() {
 
 export default ProfilePage;
 
-export function ProfileContent({ profileData }) {
+export function ProfileContent({ profileData, session }) {
   const [currentProfile, setCurrentProfile] = React.useState(null); // State to hold the profile being edited
   const [currentAddress, setCurrentAddress] = React.useState(null); // State to hold the address being edited
   const [isAddressDialogOpen, setIsAddressDialogOpen] = React.useState(false); // State to toggle dialog
@@ -172,7 +128,7 @@ export function ProfileContent({ profileData }) {
 
   const handleProfileSave = (updatedProfile) => {
     // Update the profile data after saving
-    const updatedProfiles = profileData.map((item) => (item.id === updatedProfile.id ? updatedProfile : item));
+    const updatedProfiles = (profileData = profileData.id === updatedProfile.id ? updatedProfile : profileData);
     setCurrentProfile(null); // Clear the current profile
     setIsProfileDialogOpen(false); // Close the dialog
   };
@@ -192,6 +148,8 @@ export function ProfileContent({ profileData }) {
     }
   };
 
+  console.log("Current Session:", session);
+
   return (
     <>
       {profileData && (
@@ -205,8 +163,8 @@ export function ProfileContent({ profileData }) {
               </Avatar>
             </div>
             <div className="flex flex-col justify-center">
-              <p className="text-lg font-medium">{item?.first_name + " " + item?.last_name}</p>
-              <p className="text-sm text-gray-600">{item?.email}</p>
+              <p className="text-lg font-medium">{profileData.first_name + " " + profileData.last_name}</p>
+              <p className="text-sm text-gray-600">{profileData.email}</p>
             </div>
           </div>
           <div className="flex mt-4 w-full h-auto border border-gray-200 rounded-lg p-4 shadow-md bg-white">
@@ -217,7 +175,7 @@ export function ProfileContent({ profileData }) {
                   <DialogTrigger asChild>
                     <button
                       className="flex p-2 w-24 text-gray-600 border border-gray-600 border-solid rounded-2xl hover:bg-gray-300 items-center justify-center cursor-pointer"
-                      onClick={() => handleEditProfileClick(item)}
+                      onClick={() => handleEditProfileClick(profileData)}
                     >
                       Edit <Edit className="ml-[4px]" />
                     </button>
@@ -226,7 +184,7 @@ export function ProfileContent({ profileData }) {
                     <DialogHeader>
                       <DialogTitle>Edit Profile Information</DialogTitle>
                     </DialogHeader>
-                    <ProfileEditForm profileData={currentProfile} onSave={handleProfileSave} onCancel={() => setIsProfileDialogOpen(false)} />
+                    <ProfileEditForm session={session} profileData={currentProfile} onSave={handleProfileSave} onCancel={() => setIsProfileDialogOpen(false)} />
                   </DialogContent>
                 </Dialog>
               </div>
@@ -234,25 +192,25 @@ export function ProfileContent({ profileData }) {
                 <div className="flex flex-col mt-4 w-full">
                   <div className="flex flex-col w-full mt-2">
                     <p className="text-lg font-medium">First Name</p>
-                    <p className="text-md text-gray-600 mt-2">{item?.first_name}</p>
+                    <p className="text-md text-gray-600 mt-2">{profileData.first_name}</p>
                   </div>
                   <div className="flex flex-col w-full mt-6">
                     <p className="text-lg font-medium">Email</p>
-                    <p className="text-md text-gray-600 mt-2">{item?.email}</p>
+                    <p className="text-md text-gray-600 mt-2">{profileData.email}</p>
                   </div>
                   <div className="flex flex-col w-full mt-6">
                     <p className="text-lg font-medium">Role</p>
-                    <p className="text-md text-gray-600 mt-2">{item?.role}</p>
+                    <p className="text-md text-gray-600 mt-2">{profileData.role}</p>
                   </div>
                 </div>
                 <div className="flex flex-col mt-4 w-full">
                   <div className="flex flex-col w-full mt-2">
                     <p className="text-lg font-medium">Last Name</p>
-                    <p className="text-md text-gray-600 mt-2">{item?.last_name}</p>
+                    <p className="text-md text-gray-600 mt-2">{profileData.last_name}</p>
                   </div>
                   <div className="flex flex-col w-full mt-6">
                     <p className="text-lg font-medium">Phone Number</p>
-                    <p className="text-md text-gray-600 mt-2">{item?.phone_num}</p>
+                    <p className="text-md text-gray-600 mt-2">{profileData.phone_num}</p>
                   </div>
                 </div>
               </div>
@@ -283,21 +241,21 @@ export function ProfileContent({ profileData }) {
                 <div className="flex flex-col mt-4 w-full">
                   <div className="flex flex-col w-full mt-2">
                     <p className="text-lg font-medium">Country</p>
-                    <p className="text-md text-gray-600 mt-2">{item?.country}</p>
+                    <p className="text-md text-gray-600 mt-2">{profileData.country}</p>
                   </div>
                   <div className="flex flex-col w-full mt-6">
                     <p className="text-lg font-medium">Postal Code</p>
-                    <p className="text-md text-gray-600 mt-2">{item?.postal_code}</p>
+                    <p className="text-md text-gray-600 mt-2">{profileData.postal_code}</p>
                   </div>
                 </div>
                 <div className="flex flex-col mt-4 w-full">
                   <div className="flex flex-col w-full mt-2">
                     <p className="text-lg font-medium">City/State</p>
-                    <p className="text-md text-gray-600 mt-2">{item?.city}</p>
+                    <p className="text-md text-gray-600 mt-2">{profileData.city}</p>
                   </div>
                   <div className="flex flex-col w-full mt-6">
                     <p className="text-lg font-medium">Street</p>
-                    <p className="text-md text-gray-600 mt-2">{item?.street}</p>
+                    <p className="text-md text-gray-600 mt-2">{profileData.street}</p>
                   </div>
                 </div>
               </div>
@@ -312,8 +270,8 @@ export function ProfileContent({ profileData }) {
 function ProfileEditForm({ profileData, onSave, onCancel }) {
   const [formData, setFormData] = React.useState(profileData);
   const [isAlertOpen, setIsAlertOpen] = React.useState(false); // State to toggle the alert dialog
-  const [isDialogOpen, setIsDialogOpen] = React.useState(false); // State to toggle the dialog
-
+  const [isDialogOpen, setIsDialogOpen] = React.useState(false);
+  const [session, setSession] = React.useState(null); // State to hold the session data
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
@@ -324,7 +282,7 @@ function ProfileEditForm({ profileData, onSave, onCancel }) {
     setIsAlertOpen(true); // Open the alert dialog on form submission
   };
   const handleConfirmSave = async () => {
-    const { error } = await supabase.from("users_info").update(formData).eq("id", profileData.id);
+    const { error } = await supabase.from("users_info").update(formData).eq("id", profileData.id).single(); // Update the profile in the database
 
     if (error) {
       console.error("Error updating profile:", error);
@@ -335,6 +293,71 @@ function ProfileEditForm({ profileData, onSave, onCancel }) {
       window.location.reload(); // Reload the page to reflect changes
     }
   };
+
+  useEffect(() => {
+    const { data: authListener } = supabase.auth.onAuthStateChange((_event, newSession) => {
+      setSession(newSession); // Update session state
+    });
+
+    // Fetch initial session
+    supabase.auth.getSession().then(({ data, error }) => {
+      if (error) console.error("Error getting session:", error);
+      else setSession(data.session);
+    });
+
+    return () => {
+      authListener.subscription.unsubscribe();
+    };
+  }, [session]);
+
+  const handleUpdateProfile = async () => {
+    if (!session) {
+      console.error("No active session");
+      return;
+    }
+
+    // Optionally update via Supabase client (RLS must allow it)
+    const { error: updateError } = await supabase
+      .from("users_info")
+      .update(formData)
+      .eq("id", session.user.id) // or `profileData.id`
+      .single();
+
+    if (updateError) {
+      console.error("Error updating profile via supabase client:", updateError);
+      return;
+    }
+
+    // Redundant, but shows example of REST approach (if needed)
+    const response = await fetch(`https://dlqkysdwxvmvzwgwjwrq.supabase.co/rest/v1/users_info?id=eq.${session.user.id}`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        apikey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify({
+        first_name: formData.first_name,
+        last_name: formData.last_name,
+        phone_num: formData.phone_num,
+        role: formData.role,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error("Update failed (REST):", errorData);
+      return;
+    }
+
+    // Optional cleanup
+    setIsAlertOpen(false);
+    setIsDialogOpen(false);
+    onSave(formData);
+    window.location.reload();
+  };
+
+  console.log("Session in Edit From", session);
 
   return (
     <>
@@ -363,7 +386,7 @@ function ProfileEditForm({ profileData, onSave, onCancel }) {
             <button className="bg-gray-500 text-white px-4 py-2 rounded" onClick={() => setIsAlertOpen(false)}>
               Cancel
             </button>
-            <button className="bg-blue-500 text-white px-4 py-2 rounded" onClick={handleConfirmSave}>
+            <button className="bg-blue-500 text-white px-4 py-2 rounded" onClick={handleUpdateProfile}>
               Confirm
             </button>
           </AlertDialogFooter>
