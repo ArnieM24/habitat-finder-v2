@@ -4,7 +4,7 @@ import Navbar from "@/components/navbar";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 import { Edit } from "lucide-react";
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { createClient } from "@supabase/supabase-js";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import {
@@ -20,34 +20,24 @@ import {
 } from "@/components/ui/alert-dialog";
 import { supabase } from "@/lib/supabaseClient";
 import { useSession } from "../context/sessionContext";
+import { Skeleton } from "@/components/ui/skeleton";
 
 function ProfilePage() {
   const session = useSession();
   const [activetab, setActiveTab] = React.useState("profile");
   const [profileData, setProfileData] = React.useState(null);
   const [errorMsg, setErrorMsg] = React.useState("");
-  // const [session, setSession] = React.useState(null); // State to hold the session data
   const handleTabClick = (tab) => {
     setActiveTab(tab);
   };
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      setLoading(false);
+    }, 2000);
 
-  // const fetchSession = async () => {
-  //   const currentSession = await supabase.auth.getSession();
-  //   console.log(currentSession);
-  //   setSession(currentSession.data.session);
-  // };
-
-  // useEffect(() => {
-  //   fetchSession();
-
-  //   const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
-  //     // setSession(session);
-  //   });
-
-  //   return () => {
-  //     authListener.subscription.unsubscribe();
-  //   };
-  // }, []);
+    return () => clearTimeout(timeout);
+  }, []);
 
   const fetchProfile = async () => {
     if (!session || !session.user) {
@@ -71,41 +61,6 @@ function ProfilePage() {
     }
   }, [session]);
 
-  // const fetchProfile = async () => {
-  //   if (!session) {
-  //     setErrorMsg("No logged-in user.");
-
-  //     return;
-  //   }
-
-  //   const { data, error } = await supabase.from("users_info").select("*").eq("id", session.user.id).single();
-
-  //   if (error) {
-  //     setErrorMsg(error.message);
-  //     console.error("Error fetching user profile:", error);
-  //   } else {
-  //     setProfileData(data);
-  //   }
-  // };
-
-  // useEffect(() => {
-  //   const { data: authListener } = supabase.auth.onAuthStateChange((_event, newSession) => {
-  //     setSession(newSession); // Save session to state
-  //     if (newSession) {
-  //       fetchProfile(); // Fetch profile data when session is updated
-  //     }
-  //   });
-
-  //   // If there's already a session when the component mounts, fetch the profile
-  //   if (session) {
-  //     fetchProfile();
-  //   }
-
-  //   return () => {
-  //     authListener.subscription.unsubscribe(); // Clean up listener on unmount
-  //   };
-  // }, [session]);
-
   console.log("Profile Data:", profileData);
   console.log("Sessionsssss:", session);
 
@@ -113,10 +68,22 @@ function ProfilePage() {
   const contents = () => {
     switch (activetab) {
       case "profile":
+        if (loading) {
+          return (
+            <div className="space-y-4 p-4">
+              <Skeleton className="h-6 w-24" />
+              <Skeleton className="h-[200px] w-full" />
+              <Skeleton className="h-[300px] w-full" />
+              <Skeleton className="h-[300px] w-full" />
+            </div>
+          );
+        }
         return (
-          <div>
-            <ProfileContent profileData={profileData} session={session} />
-          </div>
+          <>
+            <div>
+              <ProfileContent profileData={profileData} session={session} />
+            </div>
+          </>
         );
       case "settings":
         return <div>Settings Content</div>;
@@ -189,12 +156,11 @@ export function ProfileContent({ profileData, session }) {
     }
   };
 
-  console.log("Current Session:", session);
-
   return (
     <>
       {profileData && (
         <div className="flex flex-col h-full ml-10 w-full">
+          {/* <Skeleton className="h-[200px] w-[300px] rounded-xl" /> */}
           <h1 className="text-xl font-semibold mt-4">My Profile</h1>
           <div className="flex mt-4 w-full h-50 border border-gray-200 rounded-lg p-4 shadow-md bg-white">
             <div className="flex items-center justify-center">
@@ -265,7 +231,7 @@ export function ProfileContent({ profileData, session }) {
                   <DialogTrigger asChild>
                     <button
                       className="flex p-2 w-24 text-gray-600 border border-gray-600 border-solid rounded-2xl hover:bg-gray-300 items-center justify-center cursor-pointer"
-                      onClick={() => handleEditAddressClick(item)}
+                      onClick={() => handleEditAddressClick(profileData)}
                     >
                       Edit <Edit className="ml-[4px]" />
                     </button>
@@ -274,7 +240,7 @@ export function ProfileContent({ profileData, session }) {
                     <DialogHeader>
                       <DialogTitle>Edit Address Information</DialogTitle>
                     </DialogHeader>
-                    <AddressEditForm addressData={currentAddress} onSave={handleSaveAddress} onCancel={() => setIsAddressDialogOpen(false)} />
+                    <AddressEditForm session={session} addressData={currentAddress} onSave={handleSaveAddress} onCancel={() => setIsAddressDialogOpen(false)} />
                   </DialogContent>
                 </Dialog>
               </div>
@@ -308,11 +274,11 @@ export function ProfileContent({ profileData, session }) {
   );
 }
 
-function ProfileEditForm({ profileData, onSave, onCancel }) {
+function ProfileEditForm({ profileData, onSave, onCancel, session }) {
   const [formData, setFormData] = React.useState(profileData);
   const [isAlertOpen, setIsAlertOpen] = React.useState(false); // State to toggle the alert dialog
   const [isDialogOpen, setIsDialogOpen] = React.useState(false);
-  const [session, setSession] = React.useState(null); // State to hold the session data
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
@@ -322,49 +288,36 @@ function ProfileEditForm({ profileData, onSave, onCancel }) {
     e.preventDefault();
     setIsAlertOpen(true); // Open the alert dialog on form submission
   };
-  const handleConfirmSave = async () => {
-    const { error } = await supabase.from("users_info").update(formData).eq("id", profileData.id).single(); // Update the profile in the database
 
-    if (error) {
-      console.error("Error updating profile:", error);
-    } else {
-      setIsAlertOpen(false); // Close the alert dialog
-      setIsDialogOpen(false); // Close the dialog
-      onSave(formData); // Pass the updated profile back to the parent
-      window.location.reload(); // Reload the page to reflect changes
-    }
-  };
-
-  useEffect(() => {
-    const { data: authListener } = supabase.auth.onAuthStateChange((_event, newSession) => {
-      setSession(newSession); // Update session state
-    });
-
-    // Fetch initial session
-    supabase.auth.getSession().then(({ data, error }) => {
-      if (error) console.error("Error getting session:", error);
-      else setSession(data.session);
-    });
-
-    return () => {
-      authListener.subscription.unsubscribe();
-    };
-  }, [session]);
-
-  const handleUpdateProfile = async (session) => {
-    // Optionally update via Supabase client (RLS must allow it)
-    const { error: updateError } = await supabase
-      .from("users_info")
-      .update(formData)
-      .eq("email", session.email) // or `profileData.id`
-      .single();
-
-    if (updateError) {
-      console.error("Error updating profile via supabase client:", updateError);
+  const handleUpdateProfile = async () => {
+    if (!session?.access_token || !session?.user?.email) {
+      console.error("Session or access token is missing.");
       return;
     }
 
-    // Optional cleanup
+    const API_URL = `https://dlqkysdwxvmvzwgwjwrq.supabase.co/rest/v1/users_info?email=eq.${encodeURIComponent(session.user.email)}`;
+
+    const response = await fetch(API_URL, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        apikey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+        Authorization: `Bearer ${session.access_token}`,
+        Prefer: "return=representation",
+      },
+      body: JSON.stringify(formData),
+    });
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      console.error("REST update error:", result);
+      return;
+    }
+
+    console.log("Profile updated via REST:", result);
+
+    // Cleanup
     setIsAlertOpen(false);
     setIsDialogOpen(false);
     onSave(formData);
@@ -372,6 +325,7 @@ function ProfileEditForm({ profileData, onSave, onCancel }) {
   };
 
   console.log("Session in Edit From", session);
+  console.log("SESSION:", session?.user?.email);
 
   return (
     <>
@@ -410,7 +364,7 @@ function ProfileEditForm({ profileData, onSave, onCancel }) {
   );
 }
 
-function AddressEditForm({ addressData, onSave, onCancel }) {
+function AddressEditForm({ addressData, onSave, onCancel, session }) {
   const [formData, setFormData] = React.useState(addressData);
   const [isAlertOpen, setIsAlertOpen] = React.useState(false);
   const [isDialogOpen, setIsDialogOpen] = React.useState(false); // State to toggle dialog
@@ -420,14 +374,44 @@ function AddressEditForm({ addressData, onSave, onCancel }) {
     setFormData({ ...formData, [name]: value });
   };
 
+  const handleUpdateAddress = async () => {
+    if (!session?.access_token || !session?.user?.email) {
+      console.error("Session or access token is missing.");
+      return;
+    }
+
+    const API_URL = `https://dlqkysdwxvmvzwgwjwrq.supabase.co/rest/v1/users_info?email=eq.${encodeURIComponent(session.user.email)}`;
+
+    const response = await fetch(API_URL, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        apikey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+        Authorization: `Bearer ${session.access_token}`,
+        Prefer: "return=representation",
+      },
+      body: JSON.stringify(formData),
+    });
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      console.error("REST update error:", result);
+      return;
+    }
+
+    console.log("Profile updated via REST:", result);
+
+    // Cleanup
+    setIsAlertOpen(false);
+    setIsDialogOpen(false);
+    onSave(formData);
+    window.location.reload();
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
     setIsAlertOpen(true); // Pass the updated address back to the parent
-  };
-  const handleConfirmSave = async () => {
-    await onSave(formData); // Save the updated address
-    setIsAlertOpen(false); // Close the alert dialog
-    window.location.reload(); // Reload the page to reflect changes
   };
 
   return (
@@ -457,7 +441,7 @@ function AddressEditForm({ addressData, onSave, onCancel }) {
             <button className="bg-gray-500 text-white px-4 py-2 rounded" onClick={() => setIsAlertOpen(false)}>
               Cancel
             </button>
-            <button className="bg-blue-500 text-white px-4 py-2 rounded" onClick={handleConfirmSave}>
+            <button className="bg-blue-500 text-white px-4 py-2 rounded" onClick={handleUpdateAddress}>
               Confirm
             </button>
           </AlertDialogFooter>

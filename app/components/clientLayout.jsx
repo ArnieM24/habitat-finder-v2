@@ -11,7 +11,7 @@ export default function ClientLayout({ children }) {
   useEffect(() => {
     const getSession = async () => {
       const { data } = await supabase.auth.getSession();
-      setSession(data.session);
+      setSession(data?.session ?? null);
       setIsLoading(false);
     };
 
