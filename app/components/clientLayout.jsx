@@ -1,12 +1,34 @@
 "use client";
 
-import { useEffect } from "react";
-import supabase from "@/lib/supabaseClient";
+import { useEffect, useState } from "react";
+import { supabase } from "@/lib/supabaseClient";
+import { SessionContext } from "../context/sessionContext";
 
 export default function ClientLayout({ children }) {
+  const [session, setSession] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+
   useEffect(() => {
-    supabase.auth.getSession(); // Trigger session restoration
+    const getSession = async () => {
+      const { data } = await supabase.auth.getSession();
+      setSession(data.session);
+      setIsLoading(false);
+    };
+
+    getSession();
+
+    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+    });
+
+    return () => {
+      authListener.subscription.unsubscribe();
+    };
   }, []);
 
-  return <>{children}</>;
+  if (isLoading) {
+    return <div className="text-gray-500 p-4">Loading session...</div>;
+  }
+
+  return <SessionContext.Provider value={session}>{children}</SessionContext.Provider>;
 }

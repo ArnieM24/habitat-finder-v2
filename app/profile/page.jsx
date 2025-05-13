@@ -18,22 +18,40 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-
-const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
+import { supabase } from "@/lib/supabaseClient";
+import { useSession } from "../context/sessionContext";
 
 function ProfilePage() {
+  const session = useSession();
   const [activetab, setActiveTab] = React.useState("profile");
   const [profileData, setProfileData] = React.useState(null);
   const [errorMsg, setErrorMsg] = React.useState("");
-  const [session, setSession] = React.useState(null); // State to hold the session data
+  // const [session, setSession] = React.useState(null); // State to hold the session data
   const handleTabClick = (tab) => {
     setActiveTab(tab);
   };
 
-  const fetchProfile = async () => {
-    if (!session) {
-      setErrorMsg("No logged-in user.");
+  // const fetchSession = async () => {
+  //   const currentSession = await supabase.auth.getSession();
+  //   console.log(currentSession);
+  //   setSession(currentSession.data.session);
+  // };
 
+  // useEffect(() => {
+  //   fetchSession();
+
+  //   const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
+  //     // setSession(session);
+  //   });
+
+  //   return () => {
+  //     authListener.subscription.unsubscribe();
+  //   };
+  // }, []);
+
+  const fetchProfile = async () => {
+    if (!session || !session.user) {
+      setErrorMsg("No logged-in user.");
       return;
     }
 
@@ -48,22 +66,45 @@ function ProfilePage() {
   };
 
   useEffect(() => {
-    const { data: authListener } = supabase.auth.onAuthStateChange((_event, newSession) => {
-      setSession(newSession); // Save session to state
-      if (newSession) {
-        fetchProfile(); // Fetch profile data when session is updated
-      }
-    });
-
-    // If there's already a session when the component mounts, fetch the profile
     if (session) {
       fetchProfile();
     }
-
-    return () => {
-      authListener.subscription.unsubscribe(); // Clean up listener on unmount
-    };
   }, [session]);
+
+  // const fetchProfile = async () => {
+  //   if (!session) {
+  //     setErrorMsg("No logged-in user.");
+
+  //     return;
+  //   }
+
+  //   const { data, error } = await supabase.from("users_info").select("*").eq("id", session.user.id).single();
+
+  //   if (error) {
+  //     setErrorMsg(error.message);
+  //     console.error("Error fetching user profile:", error);
+  //   } else {
+  //     setProfileData(data);
+  //   }
+  // };
+
+  // useEffect(() => {
+  //   const { data: authListener } = supabase.auth.onAuthStateChange((_event, newSession) => {
+  //     setSession(newSession); // Save session to state
+  //     if (newSession) {
+  //       fetchProfile(); // Fetch profile data when session is updated
+  //     }
+  //   });
+
+  //   // If there's already a session when the component mounts, fetch the profile
+  //   if (session) {
+  //     fetchProfile();
+  //   }
+
+  //   return () => {
+  //     authListener.subscription.unsubscribe(); // Clean up listener on unmount
+  //   };
+  // }, [session]);
 
   console.log("Profile Data:", profileData);
   console.log("Sessionsssss:", session);
@@ -310,43 +351,16 @@ function ProfileEditForm({ profileData, onSave, onCancel }) {
     };
   }, [session]);
 
-  const handleUpdateProfile = async () => {
-    if (!session) {
-      console.error("No active session");
-      return;
-    }
-
+  const handleUpdateProfile = async (session) => {
     // Optionally update via Supabase client (RLS must allow it)
     const { error: updateError } = await supabase
       .from("users_info")
       .update(formData)
-      .eq("id", session.user.id) // or `profileData.id`
+      .eq("email", session.email) // or `profileData.id`
       .single();
 
     if (updateError) {
       console.error("Error updating profile via supabase client:", updateError);
-      return;
-    }
-
-    // Redundant, but shows example of REST approach (if needed)
-    const response = await fetch(`https://dlqkysdwxvmvzwgwjwrq.supabase.co/rest/v1/users_info?id=eq.${session.user.id}`, {
-      method: "PATCH",
-      headers: {
-        "Content-Type": "application/json",
-        apikey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-        Authorization: `Bearer ${session.access_token}`,
-      },
-      body: JSON.stringify({
-        first_name: formData.first_name,
-        last_name: formData.last_name,
-        phone_num: formData.phone_num,
-        role: formData.role,
-      }),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      console.error("Update failed (REST):", errorData);
       return;
     }
 
